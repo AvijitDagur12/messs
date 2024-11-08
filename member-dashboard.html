@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login / Register</title>
+  <style>
+    /* General Styles */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e9eff1; /* Light background similar to Facebook */
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Form container */
+    .form-container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      position: fixed;
+    }
+
+    /* Logo styling */
+    .logo {
+      display: block;
+      margin: 0 auto 20px;
+      max-width: 120px;
+      height: auto;
+    }
+
+    /* Heading styling */
+    .form-container h2 {
+      text-align: center;
+      color: #1877f2;
+      font-size: 2rem;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    /* Input field styling */
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .input-field:focus {
+      border-color: #1877f2; /* Blue border on focus */
+    }
+
+    /* Button styling */
+    .form-button {
+      background-color: #1877f2;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1.1rem;
+      box-sizing: border-box;
+    }
+
+    .form-button:hover {
+      background-color: #165e9e;
+    }
+
+    /* Toggle Register / Login Link */
+    .toggle-link {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .form-container {
+        max-width: 90%;
+        padding: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .form-container h2 {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <!-- Logo -->
+    <img src="./krishna.jpg" alt="Logo" class="logo" />
+    
+    <h2 id="formTitle">Login</h2>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+      <input id="loginEmail" type="email" class="input-field" placeholder="Email Address" />
+      <input id="loginPassword" type="password" class="input-field" placeholder="Password" />
+      <button id="loginButton" class="form-button">Login</button>
+      <p class="toggle-link">Don't have an account? <span id="toggleToRegister">Register</span></p>
+    </div>
+
+    <!-- Register Form -->
+    <div id="registerForm" style="display: none;">
+      <input id="registerName" type="text" class="input-field" placeholder="Full Name" />
+      <input id="registerEmail" type="email" class="input-field" placeholder="Email Address" />
+      <input id="registerPassword" type="password" class="input-field" placeholder="Password" />
+      <button id="registerButton" class="form-button">Register</button>
+      <p class="toggle-link">Already have an account? <span id="toggleToLogin">Login</span></p>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmbVdApgwrXfvRpjgXCXXld3_L1JG69Sg",
+      authDomain: "newproject-ec61c.firebaseapp.com",
+      projectId: "newproject-ec61c",
+      storageBucket: "newproject-ec61c.firebasestorage.app",
+      messagingSenderId: "645011924666",
+      appId: "1:645011924666:web:abc631b5c54cdca7930483",
+      measurementId: "G-4YVB0Y6CE7"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Show login form and hide register form
+    function showLoginForm() {
+      document.getElementById("formTitle").textContent = "Login";
+      document.getElementById("loginForm").style.display = "block";
+      document.getElementById("registerForm").style.display = "none";
+    }
+
+    // Show register form and hide login form
+    function showRegisterForm() {
+      document.getElementById("formTitle").textContent = "Register";
+      document.getElementById("loginForm").style.display = "none";
+      document.getElementById("registerForm").style.display = "block";
+    }
+
+    // Toggle to register form
+    document.getElementById("toggleToRegister").addEventListener("click", showRegisterForm);
+
+    // Toggle to login form
+    document.getElementById("toggleToLogin").addEventListener("click", showLoginForm);
+
+    // Handle Login
+    document.getElementById("loginButton").addEventListener("click", async () => {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log("Logged in as:", userCredential.user.email);
+
+        // Fetch user data from Firestore
+        const docRef = doc(db, "users", userCredential.user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          alert(`Welcome ${userData.name}. Total Meals: ${userData.totalMeals}`);
+        }
+
+        // Redirect to attendance page after login
+        window.location.href = "attendance.html"; // Change to your attendance page's URL
+      } catch (error) {
+        alert("Incorrect email or password.");
+      }
+    });
+
+    // Handle Registration
+    document.getElementById("registerButton").addEventListener("click", async () => {
+      const name = document.getElementById("registerName").value;
+      const email = document.getElementById("registerEmail").value;
+      const password = document.getElementById("registerPassword").value;
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        console.log("Registered as:", userCredential.user.email);
+
+        // Save user data to Firestore
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          name: name,
+          email: email,
+          totalMeals: 0, // Initially 0 meals
+        });
+
+        alert("Registration successful! You can now log in.");
+        showLoginForm();
+      } catch (error) {
+        alert("Error during registration: " + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
